@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Black Background</title>
+
+    <style>
+        html, body {
+            background-color: black;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+        }
+
+        .background > svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+
+    <script>
+        const convertPercentageStringToFloat = (percentageString) => {
+            return parseFloat(percentageString.replace('%', '')) / 100;
+        };
+
+        const convertFloatToPercentageString = (float) => {
+            return `${float * 100}%`;
+        };
+
+        class Circle {
+            constructor(cx, cy, r, fill) {
+                this.cx = cx;
+                this.cy = cy;
+                this.r = r;
+                this.fill = fill;
+
+                this.initialCircleWidth = r;
+
+                this.directionX = 0.003;
+                this.directionY = 0.003;
+                this.directionR = 1;
+            }
+
+            move() {
+                this.cx = convertFloatToPercentageString(convertPercentageStringToFloat(this.cx) + this.directionX);
+                this.cy = convertFloatToPercentageString(convertPercentageStringToFloat(this.cy) + this.directionY);
+                this.r += this.directionR;
+
+                if (convertPercentageStringToFloat(this.cx) < 0 || convertPercentageStringToFloat(this.cx) > 1) this.directionX *= -1;
+                if (convertPercentageStringToFloat(this.cy) < 0 || convertPercentageStringToFloat(this.cy) > 1) this.directionY *= -1;
+                if (this.r < (this.initialCircleWidth * .8) || this.r > (this.initialCircleWidth * 1.3)) this.directionR *= -1;
+            }
+
+            render() {
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', this.cx);
+                circle.setAttribute('cy', this.cy);
+                circle.setAttribute('r', this.r);
+                circle.setAttribute('fill', this.fill);
+
+                return circle;
+            }
+        }
+
+        const defaultCircleWidth = 200
+
+        const randomNumberBetween = (min, max) => {
+            return Math.random() * (max - min) + min;
+        };
+
+        let circles = [
+            new Circle(randomNumberBetween(0, 33.33) + '%', randomNumberBetween(10, 90) + '%', defaultCircleWidth, 'red'),
+            new Circle(randomNumberBetween(33.33, 66.66) + '%', randomNumberBetween(10, 90) + '%', defaultCircleWidth, 'orange'),
+            new Circle(randomNumberBetween(33.33, 66.66) + '%', randomNumberBetween(10, 90) + '%', defaultCircleWidth, 'green'),
+            new Circle(randomNumberBetween(66.66, 99.99) + '%', randomNumberBetween(10, 90) + '%', defaultCircleWidth, 'blue'),
+            new Circle(randomNumberBetween(0, 33.33) + '%', randomNumberBetween(10, 90) + '%', defaultCircleWidth / 2, 'green'),
+            new Circle(randomNumberBetween(0, 33.33) + '%', randomNumberBetween(10, 90) + '%', defaultCircleWidth / 2, 'red'),
+            new Circle(randomNumberBetween(33.33, 66.66) + '%', randomNumberBetween(10, 90) + '%', defaultCircleWidth / 2, 'orange'),
+            new Circle(randomNumberBetween(66.66, 99.99) + '%', randomNumberBetween(10, 90) + '%', defaultCircleWidth / 2, 'blue')
+        ];
+
+        // on document load
+        document.addEventListener('DOMContentLoaded', () => {
+            // get the svg element
+            const svg = document.querySelector('svg');
+
+            // get the filter
+            const filter = document.querySelector('filter');
+
+            // use it to animate the circles
+            setInterval(() => {
+                // Remove all circle elements from the svg
+                svg.querySelectorAll('circle').forEach(circle => {
+                    circle.remove();
+                });
+
+                // iterate over the circles
+                circles.forEach(circle => {
+                    // move the circle
+                    circle.move();
+
+                    // render the circle
+                    svg.appendChild(circle.render());
+                });
+            }, 1000/100);
+        });
+    </script>
+</head>
+<body>
+    <div class="background">
+        <!-- Create an SVG which fits the full viewport dimensions. It should contain three large circles, distributed horizontally across the svg. These circles should be blurred -->
+        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" filter="url(#blur)">
+            <filter id="blur">
+                <!-- You can set stdDeviation to 0, to see what is happening before the colors are blurred-->
+                <feGaussianBlur in="SourceGraphic" stdDeviation="124.3" />
+            </filter>
+        </svg>
+    </div>
+</body>
+</html>

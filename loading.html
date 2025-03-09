@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading Spinner</title>
+
+    <style>
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        body {
+            background-color: black;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* animation for slowly pulsating size of spinner */
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .spinner {
+            width: 150px;
+            height: 150px;
+            overflow: hidden;
+            border-radius: 500px;
+            margin: 12px;
+            box-sizing: border-box;
+            animation: pulse .9s infinite;
+            cursor: pointer;
+        }
+
+        .spinner * {
+            pointer-events: none;
+        }
+
+        .spinner > svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+
+    <script>
+        const convertPercentageStringToFloat = (percentageString) => {
+            return parseFloat(percentageString.replace('%', '')) / 100;
+        };
+
+        const convertFloatToPercentageString = (float) => {
+            return `${float * 100}%`;
+        };
+
+        class Circle {
+            constructor(cx, cy, r, fill) {
+                this.cx = cx;
+                this.cy = cy;
+                this.r = r;
+                this.opacity = 1;
+                this.fill = fill;
+
+                this.initialCircleWidth = r;
+
+                this.directionX = randomTrueOrFalse() ? .003 : -.003;
+                this.directionY = randomTrueOrFalse() ? .003 : -.003;
+                this.directionR = randomTrueOrFalse() ? 1 : -1;
+                this.directionOpacity = randomTrueOrFalse() ? .001 : -.001;
+            }
+
+            move() {
+                this.cx = convertFloatToPercentageString(convertPercentageStringToFloat(this.cx) + this.directionX);
+                this.cy = convertFloatToPercentageString(convertPercentageStringToFloat(this.cy) + this.directionY);
+                this.r += this.directionR;
+                this.opacity += this.directionOpacity;
+
+                // if (convertPercentageStringToFloat(this.cx) < 0 || convertPercentageStringToFloat(this.cx) > 1) this.directionX *= -1;
+                // if (convertPercentageStringToFloat(this.cy) < 0 || convertPercentageStringToFloat(this.cy) > 1) this.directionY *= -1;
+                // Because the spinner is so small, we need to make the collision detection more lenient because otherwise one circle would be stuck covering whole spinner and constantly colliding with the edges
+                if (convertPercentageStringToFloat(this.cx) < 0 || convertPercentageStringToFloat(this.cx) > 1) this.directionX *= -1;
+                if (convertPercentageStringToFloat(this.cy) < 0 || convertPercentageStringToFloat(this.cy) > 1) this.directionY *= -1;
+                if (this.r < (this.initialCircleWidth * .8) || this.r > (this.initialCircleWidth * 1.3)) this.directionR *= -1;
+                if (this.opacity < 0.9 || this.opacity > 1) this.directionOpacity *= -1;
+            }
+
+            render() {
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', this.cx);
+                circle.setAttribute('cy', this.cy);
+                circle.setAttribute('r', this.r);
+                circle.setAttribute('fill', this.fill);
+                circle.setAttribute('fill-opacity', this.opacity);
+
+                return circle;
+            }
+        }
+
+        const defaultCircleWidth = 44
+
+        const randomNumberBetween = (min, max) => Math.random() * (max - min) + min;
+        const randomTrueOrFalse = () => Math.random() > 0.5;
+
+        let circles = [
+            new Circle(randomNumberBetween(0, 33.33) + '%', randomNumberBetween(10, 90) + '%', defaultCircleWidth, 'red'),
+            new Circle(randomNumberBetween(33.33, 66.66) + '%', randomNumberBetween(10, 90) + '%', defaultCircleWidth, 'orange'),
+            new Circle(randomNumberBetween(33.33, 66.66) + '%', randomNumberBetween(10, 90) + '%', defaultCircleWidth, 'green'),
+            // new Circle(randomNumberBetween(66.66, 99.99) + '%', randomNumberBetween(10, 90) + '%', defaultCircleWidth, 'blue'),
+            new Circle(randomNumberBetween(0, 33.33) + '%', randomNumberBetween(10, 90) + '%', defaultCircleWidth / 1.5, 'orange'),
+            new Circle(randomNumberBetween(0, 33.33) + '%', randomNumberBetween(10, 90) + '%', defaultCircleWidth / 1.5, 'red'),
+            new Circle(randomNumberBetween(33.33, 66.66) + '%', randomNumberBetween(10, 90) + '%', defaultCircleWidth / 1.5, 'green'),
+            new Circle(randomNumberBetween(66.66, 99.99) + '%', randomNumberBetween(10, 90) + '%', defaultCircleWidth / 1.5, 'blue')
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const svg = document.querySelector('svg');
+
+            setInterval(() => {
+                svg.querySelectorAll('circle').forEach(circle => {
+                    circle.remove();
+                });
+
+                circles.forEach(circle => {
+                    circle.move();
+                    svg.appendChild(circle.render());
+                });
+            }, 1000 / 75);
+
+            document.querySelector('.spinner').addEventListener('click', () => {
+                document.body.style.backgroundColor = document.body.style.backgroundColor !== 'white' ? 'white' : 'black';
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="spinner">
+        <!-- Create an SVG which fits the full viewport dimensions. It should contain three large circles, distributed horizontally across the svg. These circles should be blurred -->
+        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" filter="url(#blur)">
+            <filter id="blur">
+                <!-- You can set stdDeviation to 0, to see what is happening before the colors are blurred-->
+                <feGaussianBlur in="SourceGraphic" stdDeviation="24" />
+            </filter>
+        </svg>
+    </div>
+</body>
+</html>
